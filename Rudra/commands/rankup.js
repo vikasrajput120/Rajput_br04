@@ -52,13 +52,8 @@ module.exports.handleEvent = async function({ api, event, Currencies, Users, get
 		const moduleName = this.config.name;
 
     var background = [
-  "https://i.imgur.com/tVCXB0q.jpeg",
-  "https://i.imgur.com/JBYox72.jpeg",
-  "https://i.imgur.com/SRRuSRk.jpeg",   "https://i.imgur.com/qhx5HLz.jpeg",
-  "https://i.imgur.com/kbB4AfZ.jpeg",
-  "https://i.imgur.com/9oxlszW.jpeg",
-  "https://i.imgur.com/cJj8LTu.jpeg",   "https://i.imgur.com/LHb5eJt.jpeg",
-
+  "https://i.postimg.cc/Z5VRbCqN/Picsart-24-07-07-08-59-35-199-1.jpg",
+  "https://i.postimg.cc/KYYTz0KJ/Picsart-24-01-18-11-46-47-596.jpg",
   ];
     var rd = background[Math.floor(Math.random() * background.length)];
     let getAvtmot = (
@@ -82,7 +77,7 @@ module.exports.handleEvent = async function({ api, event, Currencies, Users, get
     let ctx = canvas.getContext("2d");
     ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
     ctx.rotate(-25 * Math.PI / 180);
-    ctx.drawImage(baseAvt1, 40, 710, 630, 700);
+    ctx.drawImage(baseAvt1, 37, 120, 125, 130);
     const imageBuffer = canvas.toBuffer();
     fs.writeFileSync(pathImg, imageBuffer);
     fs.removeSync(pathAvt1);
@@ -105,6 +100,21 @@ module.exports.languages = {
 		"on": "on",
 		"off": "off",
 		"successText": "success notification rankup!",
+		"levelup": "‎🤍 ◁𝗖𝗢𝗡𝗚𝗥𝗔𝗧𝗨𝗟𝗔𝗧𝗜𝗢𝗡▷ 🤍  \n\n ⃟══•{name}══⃟ \n\n 𝒀𝒐𝒖𝒓 𝒍𝒆𝒗𝒆𝒍 𝒓𝒆𝒂𝒄𝒉𝒆𝒅 𝒂𝒕 ➕ {level} \n\n   𝓒𝓻𝓮𝓭𝓲𝓽𝓼 ➺➤ 𝙑𝓲𝓴𝓪𝑠 𝓡𝓪𝓳𝒑𝒖𝑡",
+	}
+}
+
+module.exports.run = async function({ api, event, Threads, getText }) {
+	const { threadID, messageID } = event;
+	let data = (await Threads.getData(threadID)).data;
+  
+	if (typeof data["rankup"] == "undefined" || data["rankup"] == false) data["rankup"] = true;
+	else data["rankup"] = false;
+	
+	await Threads.setData(threadID, { data });
+	global.data.threadData.set(threadID, data);
+	return api.sendMessage(`${(data["rankup"] == true) ? getText("on") : getText("off")} ${getText("successText")}`, threadID, messageID);
+		}		"successText": "success notification rankup!",
 		"levelup": "{name}, your keyboard has reached level {level}",
 	}
 }
