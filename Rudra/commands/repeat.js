@@ -1,54 +1,60 @@
-const { ElevenLabsClient } = require("elevenlabs");
+const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 
-// 📝 Vikas Rajput credit
-module.exports = {
+module.exports.config = {
     name: "repeat",
-    description: "Anime (Anika) voice me text bolke audio bhejo",
-    usage: "!say <text>",
+    version: "1.0.0",
+    hasPermssion: 0,
+    credits: "Vikas Rajput",
+    description: "Repeat text as cute Hindi voice",
+    commandCategory: "fun",
+    usages: "[text]",
+    cooldowns: 5
+};
 
-    run: async (client, message, args) => {
-        if (!args.length) {
-            return message.reply("❌ Please text likho jo bolwana hai!");
-        }
+module.exports.run = async function ({ api, event, args }) {
+    const text = args.join(" ");
+    if (!text) {
+        return api.sendMessage("❌ Please enter some text!", event.threadID, event.messageID);
+    }
 
-        const text = args.join(" ");
+    try {
+        // ElevenLabs API settings
+        const apiKey = process.env.ELEVEN_API_KEY || "sk_ba000e93e0d86e17842c19994791f38a938fef3663f0c5fa"; // tumhari key
+        const voiceId = "EXAVITQu4vr4xnSDxMaL"; // Anika ka default voiceId
 
-        try {
-            // 🔑 ElevenLabs client setup
-            const elevenlabs = new ElevenLabsClient({
-                apiKey: "sk_ba000e93e0d86e17842c19994791f38a938fef3663f0c5fa", // <- tumhara API key
-            });
-
-            // 🎤 Anika voice ka ID (fixed)
-            const voiceId = "EXAVITQu4vr4xnSDxMaL"; // Anika voice ID
-
-            // 📂 File path (temporary audio save)
-            const filePath = path.resolve(__dirname, `../temp/say-${Date.now()}.mp3`);
-
-            // 🔊 Convert text to speech
-            const audioStream = await elevenlabs.generate({
-                voice: voiceId,
-                model_id: "eleven_multilingual_v2",
+        // Request TTS
+        const response = await axios.post(
+            `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+            {
                 text,
-            });
+                voice_settings: { stability: 0.6, similarity_boost: 0.8 }
+            },
+            {
+                headers: {
+                    "Accept": "audio/mpeg",
+                    "Content-Type": "application/json",
+                    "xi-api-key": apiKey
+                },
+                responseType: "arraybuffer"
+            }
+        );
 
-            // Save audio file
-            const buffer = Buffer.from(await audioStream.arrayBuffer());
-            fs.writeFileSync(filePath, buffer);
+        // Save audio file
+        const filePath = path.join(__dirname, "repeat.mp3");
+        fs.writeFileSync(filePath, response.data);
 
-            // Send file in chat
-            await message.reply({ files: [filePath] });
+        // Send audio as voice message
+        return api.sendMessage(
+            { body: `🔁 ${text}`, attachment: fs.createReadStream(filePath) },
+            event.threadID,
+            () => fs.unlinkSync(filePath), // delete after sending
+            event.messageID
+        );
 
-            // Delete file after sending
-            setTimeout(() => {
-                fs.unlinkSync(filePath);
-            }, 5000);
-
-        } catch (err) {
-            console.error(err);
-            return message.reply("⚠️ Error aaya voice generate karte waqt!");
-        }
+    } catch (err) {
+        console.error(err);
+        return api.sendMessage("⚠️ Error generating voice!", event.threadID, event.messageID);
     }
 };
